@@ -14,13 +14,13 @@ stages:
   jobs:
   - job: Build
     displayName: Build
-    pool:
-      vmImage: ubuntu-latest
+    pool: azure coredata pool
+      # vmImage: ubuntu-latest
     steps:
     - task: Docker@2
       displayName: Build an image
       inputs:
-        containerRegistry: 'K8SExamplesACR'
+        containerRegistry: 'coredataplatformtest'
         repository: '$(imageRepo)'
         command: 'buildAndPush'
         Dockerfile: '$(Build.SourcesDirectory)/app/Dockerfile'
@@ -36,15 +36,15 @@ stages:
   displayName: Deploy to Dev
   dependsOn: Build
   variables:
-    acrsecret: k8sexamplesacrauth
-    acrdevurl: 'k8sexamplesacr.azurecr.io'
+    acrsecret: acr-secret2
+    acrdevurl: 'coredataplatformtest.azurecr.io'
     replicaNo: 3
   jobs:
   - deployment: Deploy
     displayName: Deploy to AKS
-    environment: 'k8sdev.default'
-    pool: 
-      vmImage: ubuntu-latest
+    environment: 'coredataplatform.default'
+    pool:  azure coredata pool
+      # vmImage: ubuntu-latest
     strategy:
       runOnce:
         deploy:
@@ -60,7 +60,7 @@ stages:
               namespace: 'default'
               secretType: 'dockerRegistry'
               secretName: '$(acrsecret)'
-              dockerRegistryEndpoint: 'K8SExamplesACR'
+              dockerRegistryEndpoint: 'coredataplatformtest'
           - task: replacetokens@3
             displayName: Replace Tokens
             inputs:
@@ -78,6 +78,7 @@ stages:
           - task: KubernetesManifest@0
             inputs:
               action: 'deploy'
+              kubernetesServiceConnection: 'sigmatest200'
               namespace: 'default'
               manifests: |
                 $(Pipeline.Workspace)/manifests/deployment.yml
